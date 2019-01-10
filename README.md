@@ -1,5 +1,6 @@
 # BEHAVIOURAL-BIOLOGY-2019
-This repository contains the exercises and discussions for the course Behavioural Biology 2019 at Aarhus University. To follow the exercises you need to install R and Rstudio.
+This repository contains the R exercises for the course Behavioural Biology 2019 at Aarhus University. To follow the exercises you need to install R and Rstudio.
+
    * R: https://www.r-project.org/
    * Rstudio: https://www.rstudio.com/
    
