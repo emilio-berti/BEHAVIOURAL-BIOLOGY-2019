@@ -5,4 +5,8 @@ This repository contains the exercises and discussions for the course Behavioura
    
 During this course, we will go through the basics of R, how to import datasets, manipulate them and perform relatively simple statistical analyses. For time issues, we will not cover some basic concepts as data types, matrix creation and data.frame operations. But, you may need these to perform more advanced statistic. If this is the case, we recommend first to read a R basic tutorial (for example http://www.r-tutor.com/r-introduction), then to search the internet (somewhere, someone already had exactly your problem and knows the anwser), and finally to ask us. You are always welcome for questions and clarifications, however the best way to learn a programming language is to fail, find the answer, solve the problem and repeat.
    
-Berti E. (emilio.berti@bios.au.dk) & Mata J. (julia.mata@bios.au.dk)
+Contacts:
+
+ * Berti Emilio: emilio.berti@bios.au.dk
+
+ * Mata Julia: julia.mata@bios.au.dk
