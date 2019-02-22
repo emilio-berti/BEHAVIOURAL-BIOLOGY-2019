@@ -1,0 +1,221 @@
+---
+title: "Non-parametric ANOVA"
+author: "Berti E, Mata JC"
+date: "15 January 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo = FALSE, results = 'hide', fig.keep='none'}
+# This chunks create the dataset that we are going to use afterwards.
+setwd('/home/GIT/BEHAVIOURAL-BIOLOGY-2019/non-par_ANOVA')
+set.seed(10)
+pacman::p_load(tidyverse)
+
+nor <- 100
+
+areas <- c(1, 2, 3)
+lambda <- areas
+
+N <- list(NA, NA, NA)
+for(i in 1:3){
+  count <- 1 / (rpois(1:nor, lambda[i]) + runif(1:nor)) * 3
+  count[which(count > 25)] <- 25 + rnorm(1, 0, 3)
+  N[[i]] <- count
+}
+
+df <- tibble(`Area` = as.factor(c(rep('Urban', nor), rep('Agr.', nor), rep('Forest', nor))),
+       `Number of nests` = unlist(N)) 
+
+ggplot(df, aes(Area, `Number of nests`)) + geom_boxplot()
+ggplot(df, aes(Area, log10(`Number of nests`))) + geom_boxplot()
+
+write_csv(df, 'spider-nest.csv')
+```
+
+
+# Introduction
+
+So far, we have encountered data that had normally distributed residuals, and we studied statistical methods to analyze them (Student's t-test, ANOVA). However, what can we do then residuals are not normally distributed? First of all, linear regression analysis is quite robust to non-normality of the residuals. Even if the residuals are not exactly normally distributed, linear regression can give reasonably good results. One way to check if residuals are _more or less_ normally distributed is the quantile-quantile plot. If the points in the Q-Q plot fall on the line with intercept = 0 and slope = 1, the residuals are normally distributed.
+
+**Question 1**: look at the figures below. Would you perform a linear regression analysis on them? Justify your anwer.
+
+```{r, results='hide', echo = F, fig.width=6, fig.height=4}
+x <- rnorm(100, 0, 1) #sample 200 values from a normal distribution
+groups <- factor(c(rep("A", 50), rep("B", 50)))
+model <- lm(x ~ groups)
+plot(model, which = 2)
+```
+
+```{r, results='hide', echo = F, fig.width=6, fig.height=4}
+x <- runif(100, 0, 1) #sample 200 values from a normal distribution
+groups <- factor(c(rep("A", 50), rep("B", 50)))
+model <- lm(x ~ groups)
+plot(model, which = 2)
+```
+
+```{r, results='hide', echo = F, fig.width=6, fig.height=4}
+x <- sqrt(1:100)*rpois(x, 1)
+groups <- factor(c(rep("A", 50), rep("B", 50)))
+model <- lm(x ~ groups)
+plot(model, which = 2)
+```
+
+```{r, results='hide', echo = F, fig.width=6, fig.height=4}
+x <- sqrt(1:100) * 6.75
+theor <- rnorm(100, mean(x), sd(x))
+qqplot(theor, x, xlab = 'Theoretical', ylab = 'Empirical', main = 'QQ plot')
+abline(0, 1)
+```
+
+## Alternatives to linear regression analysis
+
+Once we established that the residuals are clearly not normally distributed, we have to rely on different statistical approaches that do not assume a particular distribution or estimate parameters. Because they are free of parameters, these methods are usually called non-parametric tests. The most common non-parametric tests are:
+
+  * Kolmogorov-Smirnov test
+  * Rank-sum test (also called Mann–Whitney U test)
+  * Signed-rank test (also called Wilcoxon test)
+  * Kruskal-Wallis test
+
+In the next exercise we will use the rank-sum test (U test) and the Kruskal-Wallis test. **Julia: write here how you want to explain them**
+
+## Example 1
+
+We sampled the age of marriage of 12 Danish people, six male and six women, without relation with each other (independent). We want to know if the age at which women and men marry is different.
+
+```{r, echo = F}
+males <- c(39.5, 45.2, 30.2, 33.5, 31.0, 32.0)
+females <- c(37.5, 24.3, 29.0, 28.3, 30.2, 25.5)
+age <- c(males, females) #create age vector
+sex <- c(rep("M", 6), rep("F", 6)) #create groups
+df <- data.frame(age, sex) #create data.frame
+df$sex <- df$sex[order(df$age)] #order the column 
+df$age <- sort(df$age) #order the age column
+write.csv(df, 'marriage_age.csv')
+```
+
+```{r}
+df <- read.csv('marriage_age.csv') #load the data
+boxplot(age ~ sex, data = df) #explore the data with a boxplot
+```
+
+```{r, fig.width=5, fig.align='center'}
+model <- lm(age ~ sex) #create a linear model
+plot(model, which = 2) #check residuals
+```
+
+Because the residuals have large deviation from the dotted line, we decide to perform the non-parametric rank-sum test.
+
+```{r}
+wilcox.test(age ~ sex, data = df, paired = F) # Mann-Whitney U test (rank-sum)
+```
+
+If we had used a parametric linear model, we would have obtained a different result:
+```{r}
+t.test(age ~ sex, data = df) #what we would do with normal residuals
+```
+
+## Example 2
+
+We counted the number of occurences of the butterfly species _Schmetterling aurea_ at three different altitudes. We want to know if the butterfly is distributed evenly among the three altitudinal levels.
+
+```{r, echo = F}
+A <- rpois(n = 23, lambda = 1)
+B <- rpois(n = 29, lambda = 2)
+C <- rpois(n = 15, lambda = 0.1)
+counts <- c(A, B, C)
+altitude <- c(rep("0(m)", 23), rep("150(m)", 29), rep("300(m)", 15))
+df <- data.frame(altitude, counts)
+write.csv(df, 'butterfly_count.csv')
+```
+
+```{r}
+df <- read.csv('butterfly_count.csv') #import the data
+boxplot(counts ~ altitude, data = df) #explore the data
+model <- lm(counts ~ altitude, data = df) #create linear model
+plot(model, which = 2) #check the residuals
+```
+
+```{r}
+kruskal.test(counts ~ altitude, data = df) #Kruskal-Wallis test
+```
+In this case, the result of the non-parametric test are not different from results from a linear model (ANOVA):
+```{r}
+model <- lm(counts ~ altitude, data = df)
+anova(model)
+```
+
+If we want to know which altitudes are different from each other, we have to compare the occurences between altitudes using a U test between each pairings, for a total of three tests. This is called multiple testing or multiple comparison. Because we are considering several hypotheses together (the first group is different from the second + the first is different from the third + the second is different from the third), we have to adjust the significance level (and the p-value) of the test to not increase the overall probability of rejecting at least one true null hypothesis (type I error). The most common way to account for this is by using the Bonferroni correction, which can be stated as: _every time you perform multiple comparisons, divide you significane level (or multiply your p-value) for the number of comparisons_.
+
+```{r}
+subset_1 <- subset(df, df$altitude != "300(m)") # != means: not equal to
+subset_2 <- subset(df, df$altitude != "150(m)") #subset to exclude "150(m)"
+subset_3 <- subset(df, df$altitude != "0(m)") #subset to exclude "0(m)"
+wilcox.test(counts ~ altitude, data = subset_1)
+wilcox.test(counts ~ altitude, data = subset_2)
+wilcox.test(counts ~ altitude, data = subset_3)
+```
+In this case, all p-value after Bonferroni correction are still below the significance level of $\frac{0.05}{3} = 0.17$, and we can reject all null hypotheses.
+
+
+\clearpage
+
+# Exercise 2
+
+## Background
+
+We want to know what is the effect of urbanization on the reproduction of spiders. We have strong evidence to think that spiders have a higher fitness (number of offspring) in urban areas. To test this, we sample the number of spider nests in three different areas: agricultural area, forested area and urban area. The null hypothesis is that there is not difference between the three areas.
+
+## Test the hypothesis
+
+First, navigate to your working directory with *setwd()* and load the dataset called _spider-nest.csv_ into the environment using *read.csv()*. Familiarize with the dataset and display the boxplot of the count of number of nests per area. This can be done using the function *boxplot(y ~ x)*.
+
+```{r, echo = T, results = T, fig.width=8, fig.align='center'}
+setwd('/home/GIT/BEHAVIOURAL-BIOLOGY-2019/non-par_ANOVA')
+dataset <- read.csv('spider-nest.csv')
+par(mfrow = c(1, 2)) # 1 row, 2 columns in the figure
+boxplot(Number.of.nests ~ Area, data = dataset, ylab = 'Number of nests')
+boxplot(log10(Number.of.nests) ~ Area, data = dataset, ylab = 'Number of nests')
+```
+
+Counts of objects in an area are rarely normally distributed variables. To check if this is the case, we create a linear model and plot its residuals.
+
+```{r, fig.width=8, fig.height=4, fig.align='center'}
+par(mfrow = c(1, 2))
+
+model <- lm(Number.of.nests ~ Area, data = dataset)
+plot(model, which = 2, main = 'original dataset')
+
+model <- lm(log10(Number.of.nests) ~ Area, data = dataset)
+plot(model, which = 2, main = 'log10 - transformed')
+```
+
+**Question 1**: are these data normally distributed? 
+
+**Question 2**: using the Kruskal-Wallis test, accept or reject the null hypothesis: there is not difference in the number of nests between areas.
+
+```{r}
+kruskal.test(dataset$Number.of.nests, dataset$Area)
+```
+
+**Question 3**: using the rank-sum test test, find the areas that differ in number of nests with an overall significance level of $\bar{\alpha} = 0.05$ (use Bonferroni correction). Which ones are different? In R the rank-sum test is implemented in the *wilcox.test()* function, which contains the parameters *paired* that determines if the rank-sum test is performed (*paired = F*), or the signed-rank test is performed (*paired = T*).
+
+```{r, echo = FALSE, results = T, warning=F, fig.keep='none'}
+urban <- subset(dataset$Number.of.nests, dataset$Area == 'Urban')
+forest <- subset(dataset$Number.of.nests, dataset$Area == 'Forest')
+agr <- subset(dataset$Number.of.nests, dataset$Area == 'Agr.')
+wilcox.test(urban, forest)
+wilcox.test(urban, agr)
+wilcox.test(agr, forest)
+```
+
+All p-values are below 0.05, but we can not reject all null hypotheses and say that all areas have different number of nests. In this case, we did not make one test, but three. We need to apply the Bonferroni correction. After the Bonferroni correction, the p-values become:
+```{r, echo = FALSE, results = T, warning=F, fig.keep='none'}
+wilcox.test(urban, forest)$p.value * 3
+wilcox.test(urban, agr)$p.value * 3
+wilcox.test(agr, forest)$p.value * 3
+```
+After Bonferroni correction we cannot reject all null hypotheses: agricultural and forested areas have the same number of spider nests.

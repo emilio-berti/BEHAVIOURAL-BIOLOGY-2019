@@ -1,0 +1,134 @@
+---
+title: "Climate change influence on laying time in birds"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Hypothesis
+We want to investigate if the time at which flycatchers lay eggs is correlated with the increasing average temperature. We selected three species: _Elaenia gigas_, _Elaenia cristata_ and _Elaenia dayi_. We recorded the difference in lay deposition (difference in month percentage, 0 at 1st of April) and the average temperature for the period of interest. We want to know if the time of deposition is significantly different between 50 years ago and last year, which have different average temperature. _Temperature A_ is 50 years ago and _Tempreature B_ is last year.
+
+## Workflow
+1. Load the .csv file _climate-change-data-1_:
+```{r}
+setwd('/home/GIT/BEHAVIOURAL-BIOLOGY-2019/climate-change') #relative to you
+df <- read.csv('climate-change-data-1.csv') #feel free to use your favorite import function
+```
+
+2. Explore the data
+Look at the dataset
+```{r, echo = T, results='markup'}
+head(df) #shows the first 6 lines of data
+View(df) #view the dataset in a separate tab 
+```
+
+Explore the data from 50 years ago, _Temperature A_.
+
+```{r}
+only_A <- subset(df, Temperature == "A") #subset to only look at temperature A
+avg_LayDayA <- mean(only_A$LayDay) #calculate the mean lay day for temperature A
+avg_LayDayA
+med_LayDayA <- median(only_A$LayDay) #calculate the median lay day for temperature B
+med_LayDayA
+```
+
+We make a histogram to visually represent the distrubution of the data
+
+```{r, echo = T, results='markup'}
+hist(only_A$LayDay, col = 'steelblue', main = 'Temperature A', xlab = 'Lay Day')
+```
+
+We do the same for the data from the last year, _Temperature B_.
+
+
+
+3. Test relationship between lay day and temperature
+
+We want to see if the clutch lay day is significantly different between _Temperature A_ and _Temperature B_. For this we are going to use the Student's t test.
+
+The Student's t test compares two means and tells us if they are different from each other. The t test also shows how significant the differences are. In other words it lets us know if those differences could have happened by chance or not.
+When conducting a t-test you are making assumptions on the data. One of these assumptions is that residuals have a normal distribution. 
+
+First, we will do a linear model to study the relation between the lay day and temperature and later test the normality of the distribution of the residuals.
+
+```{r, echo = T, results='markup'}
+model1 <- lm(LayDay ~ Temperature, data = df)
+summary(model1)
+```
+
+To test the assumption of normality we will do a qqplot of the residuals. The residual of an observed value is the difference between the observed value and the estimated value. 
+
+```{r, echo = T, results='markup', fig.height=4, fig.width=4}
+plot(model1) #this command generates 4 plots, we are only going to work with Normal Q-Q
+```
+
+Now we perform the actual t test to learn if the lay day changes in relation to the temperature. A p-value of more than 0.05 means that the relation is significant.
+
+```{r, echo = T, results='markup'}
+t.test(LayDay ~ Temperature, data = df)
+```
+
+4. Test if the lay day changes significantly according to species
+
+In the data set we have three different species, in order to investigate if these species have differences in clutch lay day we will preform an ANOVA. This analysis allows us to compare three or more groups.
+
+First we will explore the data from Species _E. gigas_.
+
+```{r}
+only_gigas <- subset(df, Species == "E. gigas")
+```
+```{r, echo = T, results='markup'}
+hist(only_gigas$LayDay, col = 'orange', main = 'Species E. gigas', xlab = 'Lay Day')
+```
+
+We perfom the same exploration of the data for Species _E. cristata_ and Species _E. dayi_.
+
+
+We do a linear model again, but this time we want to study lay day as a function of the _Species_.
+
+```{r, echo = T, results='markup'}
+model2 <- lm(LayDay ~ Species, data = df)
+summary(model2)
+```
+
+When you perform an ANOVA you are assuming that the distribution of the residuals is normal. To check this we will do a qqplot.
+
+```{r, echo = T, results='markup', fig.height=4, fig.width=4}
+plot(model2) #this command generates 4 plots, we are only going to work with Normal Q-Q
+```
+
+Perform an ANOVA to study if the clutch's lay day is significantly different between the three species.
+
+ANOVA
+Analysis of Variance (ANOVA) is a statistical method used to test general differences between two or more means. You are testing groups to see if there's a difference between them. It allows us to make comparisons between more than 2 groups.
+
+```{r, echo = T, results='markup'}
+anova(model2)
+```
+
+
+5. Interpret the results:
+  + what can we say about the influence of _Species_ on _LayDay_?
+  + what can we say about the influence of _Temperature_ on _LayDay_?
+  + what limitations may this study have?
+  + give some suggestions on how to improve the study.
+  
+  
+##Exercise
+
+We provided another dataset, _climate-change-data-2.csv_, that includes an extra species _Picumnus pumilus_. _P. pumilus_ is phylogenetically distant to the flycatchers. 
+
+1. Explore the Species _P. pumilus_ in the dataset, check for normality
+2. Investigate if this species' lay day is influenced by temperature 
+3. Check if there is a significant difference between species regarding the lay day now that _P. pumilus_ has been added.
+
+2. Interpret the results: 
+  + what can we say about the influence of _Temperature_ on _LayDay_ for _P. pumilus_?
+  + what has changed regarding influence of _Species_ on _LayDay_ with the addition of _P. pumilus_?
+  + what does this mean?
+  
+Now it is your turn to work by yourselves!
